@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>K-ETF 모의 주식 투자 시뮬레이터 (2025.09 ~ 2026.09)</title>
+  
+  <!-- Pretendard & FontAwesome -->
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css" />
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" />
+  
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- 1. 상단 글로벌 네비게이션 & 자산 대시보드 -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">
+        <i class="fa-solid fa-chart-candlestick"></i>
+      </div>
+      <div>
+        <div class="brand-title">ALPHA TRADER ETF</div>
+        <div class="brand-badge">2025.09 - 2026.09 REALISTIC SIMULATION</div>
+      </div>
+    </div>
+
+    <!-- 계좌 자산 요약 바 -->
+    <div class="dashboard-assets-bar">
+      <div class="asset-stat-group">
+        <span class="asset-stat-label">총 평가자산</span>
+        <span class="asset-stat-value text-gold" id="totalAssets">10,000,000원</span>
+      </div>
+      <div class="asset-stat-divider"></div>
+      <div class="asset-stat-group">
+        <span class="asset-stat-label">총 손익 (수익률)</span>
+        <div style="display: flex; gap: 6px; align-items: baseline;">
+          <span class="asset-stat-value text-muted" id="totalPnL">0원</span>
+          <span class="asset-stat-value text-muted" id="totalReturnRate">(0.00%)</span>
+        </div>
+      </div>
+      <div class="asset-stat-divider"></div>
+      <div class="asset-stat-group">
+        <span class="asset-stat-label">예수금(현금)</span>
+        <span class="asset-stat-value" id="availableCash">10,000,000원</span>
+      </div>
+      <div class="asset-stat-divider"></div>
+      <div class="asset-stat-group">
+        <span class="asset-stat-label">주식 평가액</span>
+        <span class="asset-stat-value" id="stockValuation">0원</span>
+      </div>
+    </div>
+
+    <!-- 시뮬레이션 제어 바 -->
+    <div class="sim-controls-bar">
+      <div class="sim-timeline-info">
+        <div class="sim-date-badge">
+          <i class="fa-regular fa-calendar"></i>
+          <span id="currentSimDate">2025.09.01</span>
+        </div>
+        <div class="sim-timer-box">
+          남은 시간: <span id="timerDisplay" class="text-gold font-bold">30:00</span>
+        </div>
+        <div class="progress-track">
+          <div class="progress-bar" id="timeProgressBar"></div>
+        </div>
+      </div>
+
+      <select class="sim-speed-select" id="selectSpeed" title="시뮬레이션 배속 설정">
+        <option value="1">1x (30분 정상속도)</option>
+        <option value="2">2x (15분 배속)</option>
+        <option value="5">5x (6분 배속)</option>
+        <option value="10">10x (3분 초고속)</option>
+        <option value="30">30x (1분 마하속도)</option>
+      </select>
+
+      <button class="btn-start-sim" id="btnStartSim">
+        <i class="fa-solid fa-play"></i> 모의투자 시작
+      </button>
+      <button class="btn-pause-sim" id="btnPauseSim" style="display: none;">
+        <i class="fa-solid fa-pause"></i> 일시정지
+      </button>
+    </div>
+  </header>
+
+  <!-- 2. 메인 3컬럼 레이아웃 -->
+  <main class="main-layout">
+    
+    <!-- 좌측 컬럼: 20개 ETF 종목 리스트 & 검색 -->
+    <section class="sidebar-stock-list">
+      <div class="sidebar-header">
+        <div class="search-box">
+          <i class="fa-solid fa-magnifying-glass"></i>
+          <input type="text" id="stockSearchInput" placeholder="종목명, 티커, 태그 검색 (예: 반도체, 조선, 방산)">
+        </div>
+        <select class="category-filter" id="categoryFilter">
+          <option value="ALL">전체 카테고리 (12종목)</option>
+          <option value="국내대표지수">국내대표지수 (KODEX 200)</option>
+          <option value="반도체">반도체 / IT</option>
+          <option value="해외지수">해외지수 / 글로벌 빅테크</option>
+          <option value="조선">조선 / 중공업</option>
+          <option value="방위산업">방위산업</option>
+          <option value="바이오">바이오 / 헬스케어</option>
+          <option value="원자력">원자력 / 전력인프라</option>
+          <option value="로봇">로봇 / 오토메이션</option>
+          <option value="콘텐츠">콘텐츠 / 미디어</option>
+          <option value="친환경">친환경에너지</option>
+          <option value="채권">채권 / 안전자산</option>
+        </select>
+      </div>
+
+      <div class="stock-list-container" id="stockListContainer">
+        <!-- JS로 20개 종목 렌더링 -->
+      </div>
+    </section>
+
+    <!-- 중앙 컬럼: 인터랙티브 차트 & 하단 탭 -->
+    <section class="center-content-area">
+      <!-- 상단 차트 패널 -->
+      <div class="chart-panel">
+        <div class="chart-header">
+          <div>
+            <div class="selected-stock-title-wrap">
+              <span class="selected-stock-name" id="selectedStockName">코스피 ETF</span>
+              <span class="selected-stock-symbol" id="selectedStockSymbol">069500</span>
+              <span class="selected-stock-category" id="selectedStockCategory">국내대표지수</span>
+            </div>
+            <div class="selected-stock-pricing">
+              <span class="stat-huge" id="selectedStockPrice">36,500원</span>
+              <span class="stat-change" id="selectedStockChange">+0원 (+0.00%)</span>
+            </div>
+          </div>
+
+          <div class="chart-stats-summary">
+            <div class="mini-stat-item">
+              <span class="mini-stat-label">최고가 (High)</span>
+              <span class="mini-stat-val text-danger" id="selectedStockHigh">38,500원</span>
+            </div>
+            <div class="mini-stat-item">
+              <span class="mini-stat-label">최저가 (Low)</span>
+              <span class="mini-stat-val text-primary" id="selectedStockLow">38,500원</span>
+            </div>
+            <div class="mini-stat-item">
+              <span class="mini-stat-label">누적 거래량</span>
+              <span class="mini-stat-val" id="selectedStockVol">0주</span>
+            </div>
+
+            <div class="chart-controls">
+              <button class="btn-chart-type active" id="btnChartCandle">캔들</button>
+              <button class="btn-chart-type" id="btnChartLine">라인</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 캔버스 차트 영역 -->
+        <div class="chart-canvas-wrapper">
+          <canvas id="mainStockChart"></canvas>
+        </div>
+      </div>
+
+      <!-- 하단 탭 패널 (포트폴리오 / 뉴스 / 체결내역) -->
+      <div class="bottom-info-panel">
+        <div class="panel-tabs-header">
+          <button class="tab-btn active" id="tabBtnPortfolio">
+            <i class="fa-solid fa-briefcase"></i> 보유 포트폴리오
+          </button>
+          <button class="tab-btn" id="tabBtnNews">
+            <i class="fa-solid fa-newspaper"></i> 실시간 시장 속보
+            <span class="badge-new" id="newsBadge" style="display: none;">NEW</span>
+          </button>
+          <button class="tab-btn" id="tabBtnHistory">
+            <i class="fa-solid fa-receipt"></i> 주문 체결 내역
+          </button>
+        </div>
+
+        <div class="tab-content-body">
+          <div id="portfolioTabContent">
+            <!-- 보유 포트폴리오 테이블 -->
+          </div>
+          <div id="newsTabContent" class="news-grid" style="display: none;">
+            <!-- 실시간 뉴스 카드들 -->
+          </div>
+          <div id="historyTabContent" style="display: none;">
+            <!-- 주문 체결 내역 테이블 -->
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 우측 컬럼: 5단계 호가창 & 시장가 주문 -->
+    <section class="sidebar-order-panel">
+      <!-- 5단계 호가창 -->
+      <div class="orderbook-card">
+        <div class="card-title">
+          <span><i class="fa-solid fa-bars-staggered"></i> 실시간 호가 (5단계)</span>
+          <span style="font-size: 11px; color: var(--text-sub);">클릭 시 주문 연동</span>
+        </div>
+        <div class="orderbook-grid">
+          <div id="orderBookAsks">
+            <!-- 매도 호가 5개 -->
+          </div>
+          <div style="height: 1px; background: rgba(255,255,255,0.1); margin: 3px 0;"></div>
+          <div id="orderBookBids">
+            <!-- 매수 호가 5개 -->
+          </div>
+        </div>
+      </div>
+
+      <!-- 주문 실행 패널 -->
+      <div class="order-execution-card">
+        <div class="order-type-tabs">
+          <button class="btn-order-type-tab tab-buy active" id="tabBuy">매수 (Buy)</button>
+          <button class="btn-order-type-tab tab-sell" id="tabSell">매도 (Sell)</button>
+        </div>
+
+        <div class="order-form-group">
+          <label class="order-form-label">주문 수량 (주)</label>
+          <div class="order-input-wrap">
+            <input type="number" id="orderQuantity" min="1" placeholder="수량 입력">
+            <span class="order-input-unit">주</span>
+          </div>
+        </div>
+
+        <!-- 비중 버튼 (10%, 25%, 50%, 75%, MAX) -->
+        <div class="percent-buttons-grid">
+          <button class="btn-order-percent" data-pct="10">10%</button>
+          <button class="btn-order-percent" data-pct="25">25%</button>
+          <button class="btn-order-percent" data-pct="50">50%</button>
+          <button class="btn-order-percent" data-pct="75">75%</button>
+          <button class="btn-order-percent" data-pct="100">최대</button>
+        </div>
+
+        <div class="order-available-hint" id="orderAvailableText">
+          매수 가능: 0주 (현금: 10,000,000원)
+        </div>
+
+        <div class="order-summary-row">
+          <span style="color: var(--text-muted);">예상 결제 금액</span>
+          <span class="order-summary-value text-gold" id="orderTotalEstimate">0원</span>
+        </div>
+
+        <button class="btn-order-execute btn-buy" id="btnExecuteOrder">
+          시장가 매수 주문
+        </button>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- 토스트 알림 컨테이너 -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <!-- 30분 종료 후 최종 결산 리포트 모달 -->
+  <div class="modal-overlay" id="settlementModal">
+    <div class="settlement-card">
+      <div class="modal-badge">1-YEAR INVESTMENT REPORT</div>
+      <h2 class="settle-title">모의 투자 최종 정산 결과</h2>
+      <p class="settle-subtitle">2025년 9월 ~ 2026년 9월 (30분간)의 투자 성과 분석표입니다.</p>
+
+      <div class="settle-result-box">
+        <div class="settle-main-stat">
+          <span class="settle-stat-label">최종 확정 자산 (초기 자본: 10,000,000원)</span>
+          <span class="settle-main-value text-gold" id="settleTotalAssets">12,500,000원</span>
+        </div>
+        <div>
+          <span class="settle-stat-label">최종 순손익 & 수익률:</span>
+          <span class="settle-stat-value" id="settlePnL">+2,500,000원 (+25.00%)</span>
+        </div>
+
+        <div class="settle-benchmark-grid">
+          <div class="benchmark-item">
+            <div class="benchmark-label">KOSPI 200 벤치마크</div>
+            <div class="benchmark-val" id="settleKospiReturn">+8.50%</div>
+          </div>
+          <div class="benchmark-item">
+            <div class="benchmark-label">NASDAQ 200 벤치마크</div>
+            <div class="benchmark-val" id="settleNasdaqReturn">+15.20%</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="investor-type-card">
+        <div class="investor-type-title" id="settleInvestorType">🔥 전설의 슈퍼 그로스 트레이더</div>
+        <div class="investor-type-desc" id="settleInvestorDesc">
+          탁월한 시장 통찰력과 과감한 주도 테마주 집중 투자로 벤치마크를 압도하는 경이적인 수익을 달성했습니다!
+        </div>
+      </div>
+
+      <button class="btn-modal-restart" id="btnRestartModal">
+        <i class="fa-solid fa-rotate-right"></i> 새로운 1년 시뮬레이션 도전하기
+      </button>
+    </div>
+  </div>
+
+  <!-- 스크립트 로드 순서 -->
+  <script src="data/stocks.js"></script>
+  <script src="data/news.js"></script>
+  <script src="js/simulation.js"></script>
+  <script src="js/chart.js"></script>
+  <script src="js/trade.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
